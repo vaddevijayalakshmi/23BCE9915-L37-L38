@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Card</title>
+    <style>
+        .product-card {
+            width: 300px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            font-family: Arial, sans-serif;
+            background: white;
+        }
+        .product-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .product-card h3 {
+            margin: 15px 0 10px;
+            color: #333;
+        }
+        .product-card p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+        .buy-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        .buy-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="product-card">
+        <img src="https://m.media-amazon.com/images/I/81-kkYIIptL._AC_UY1100_.jpg" alt="Baby Blue Ruffle Dress">
+        <h3>Baby Blue Ruffle Dress</h3>
+        <p>Adorable sleeveless baby dress with layered ruffle skirt and bow detail, perfect for summer outings and special occasions.</p>
+        <div class="price">$24.99</div>
+        <button class="buy-btn">Buy Now</button>
+    </div>
+</body>
+</html>
