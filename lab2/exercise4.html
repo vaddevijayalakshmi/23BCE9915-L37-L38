@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced LocalStorage User Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .form-container, .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h2 { color: #333; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        .delete-btn { background-color: #dc3545; }
+        .delete-btn:hover { background-color: #c82333; }
+        .clear-all { background-color: #6c757d; }
+        .clear-all:hover { background-color: #545b62; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th { background-color: #f8f9fa; }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: -10px;
+            margin-bottom: 15px;
+        }
+        .success { color: #28a745; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <h1>User Registration & Management System</h1>
+    
+    <div class="form-container">
+        <h2>Register New User</h2>
+        <form id="registrationForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" required>
+            <div id="nameError" class="error"></div>
+            
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
+            <div id="emailError" class="error"></div>
+            
+            <label for="mobile">Mobile Number:</label>
+            <input type="tel" id="mobile" required>
+            <div id="mobileError" class="error"></div>
+            
+            <label for="password">Password:</label>
+            <input type="password" id="password" required minlength="6">
+            <div id="passwordError" class="error"></div>
+            
+            <button type="submit">Register User</button>
+        </form>
+        <div id="message"></div>
+    </div>
+    
+    <div class="table-container">
+        <h2>Registered Users</h2>
+        <button id="clearAll" class="clear-all">Clear All Users</button>
+        <table id="usersTable">
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Mobile</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const REGISTRATION_KEY = 'users';
+        
+        function loadUsers() {
+            return JSON.parse(localStorage.getItem(REGISTRATION_KEY) || '[]');
+        }
+        
+        function saveUsers(users) {
+            localStorage.setItem(REGISTRATION_KEY, JSON.stringify(users));
+        }
+        
+        function displayUsers() {
+            const users = loadUsers();
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            users.forEach((user, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                    <td>${user.mobile}</td>
+                    <td><button class="delete-btn" onclick="deleteUser(${index})">Delete</button></td>
+                `;
+            });
+        }
+        
+        function deleteUser(index) {
+            const users = loadUsers();
+            users.splice(index, 1);
+            saveUsers(users);
+            displayUsers();
+            showMessage('User deleted successfully!', 'success');
+        }
+        
+        document.getElementById('clearAll').addEventListener('click', () => {
+            localStorage.removeItem(REGISTRATION_KEY);
+            displayUsers();
+            showMessage('All users cleared!', 'success');
+        });
+        
+        function validateForm() {
+            document.querySelectorAll('.error').forEach(el => el.textContent = '');
+            let isValid = true;
+            
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                document.getElementById('nameError').textContent = 'Name is mandatory';
+                isValid = false;
+            }
+            
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                document.getElementById('emailError').textContent = 'Email is mandatory';
+                isValid = false;
+            } else {
+                if (loadUsers().find(u => u.email === email)) {
+                    document.getElementById('emailError').textContent = 'Email already registered';
+                    isValid = false;
+                }
+            }
+            
+            const mobile = document.getElementById('mobile').value.trim();
+            if (!/^\d{10}$/.test(mobile)) {
+                document.getElementById('mobileError').textContent = 'Mobile must be 10 digits';
+                isValid = false;
+            }
+            
+            const password = document.getElementById('password').value;
+            if (password.length < 6) {
+                document.getElementById('passwordError').textContent = 'Password must be minimum 6 characters';
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        function showMessage(msg, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = msg;
+            messageEl.className = type;
+            setTimeout(() => {
+                messageEl.textContent = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+        
+        document.getElementById('registrationForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!validateForm()) return;
+            
+            const user = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                mobile: document.getElementById('mobile').value.trim(),
+                password: document.getElementById('password').value
+            };
+            
+            const users = loadUsers();
+            users.push(user);
+            saveUsers(users);
+            document.getElementById('registrationForm').reset();
+            displayUsers();
+            showMessage('User registered successfully!', 'success');
+        });
+        
+        displayUsers();
+    </script>
+</body>
+</html>
