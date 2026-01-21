@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Multi-Step Form with Summary</title>
+<style>
+  body {
+    font-family: sans-serif;
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  h2 { text-align: center; margin-bottom: 1rem; }
+  .stage { display: none; }
+  .stage.active { display: block; }
+  input, select {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0 5px;
+    border-radius: 6px;
+    border: 1.5px solid #ccc;
+    font-size: 16px;
+  }
+  .error { border-color: #e44; }
+  small { color: #e44; display: block; margin-bottom: 8px; }
+  button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 12px 0;
+    width: 48%;
+    margin-top: 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: #a5c4f9;
+    cursor: not-allowed;
+  }
+  #progress {
+    height: 8px;
+    background: #eee;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  #progress > div {
+    height: 8px;
+    background: #4a90e2;
+    width: 0;
+    transition: width 0.3s ease;
+  }
+  #summary {
+    margin-top: 30px;
+    background: #f7f9fc;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #222;
+  }
+  #summary h3 {
+    margin-top: 0;
+  }
+  #summary ul {
+    padding-left: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Register</h2>
+<div id="progress"><div></div></div>
+
+<form id="form" novalidate>
+  <div class="stage active" data-stage="0">
+    <input id="fname" placeholder="First Name" />
+    <small></small>
+    <input id="lname" placeholder="Last Name" />
+    <small></small>
+  </div>
+
+  <div class="stage" data-stage="1">
+    <input id="email" placeholder="Email" type="email" />
+    <small></small>
+    <input id="age" placeholder="Age" type="number" min="18" />
+    <small></small>
+  </div>
+
+  <div class="stage" data-stage="2">
+    <select id="role">
+      <option value="">Select Role</option>
+      <option>Student</option>
+      <option>Teacher</option>
+      <option>Admin</option>
+    </select>
+    <small></small>
+    <input id="skills" placeholder="Skills (comma separated)" />
+    <small></small>
+  </div>
+
+  <div class="stage" data-stage="3">
+    <input id="pass" type="password" placeholder="Password" />
+    <small></small>
+    <input id="cpass" type="password" placeholder="Confirm Password" />
+    <small></small>
+  </div>
+
+  <div style="display:flex; justify-content: space-between;">
+    <button type="button" id="prev" disabled>Previous</button>
+    <button type="button" id="next">Next</button>
+  </div>
+</form>
+
+<div id="summary" style="display:none;">
+  <h3>Summary:</h3>
+  <ul id="summaryList"></ul>
+</div>
+
+<script>
+  const form = document.getElementById('form'),
+        stages = form.querySelectorAll('.stage'),
+        prevBtn = document.getElementById('prev'),
+        nextBtn = document.getElementById('next'),
+        progressBar = document.getElementById('progress').firstElementChild,
+        summaryDiv = document.getElementById('summary'),
+        summaryList = document.getElementById('summaryList');
+
+  let current = 0;
+
+  function showStage(n) {
+    stages.forEach((s,i) => s.classList.toggle('active', i === n));
+    prevBtn.disabled = n === 0;
+    nextBtn.textContent = n === stages.length -1 ? 'Finish' : 'Next';
+    progressBar.style.width = ((n+1)/stages.length)*100 + '%';
+    summaryDiv.style.display = 'none';
+    form.style.display = 'block';
+  }
+
+  function validateStage(n) {
+    let valid = true;
+    const inputs = stages[n].querySelectorAll('input, select');
+    inputs.forEach(input => {
+      const small = input.nextElementSibling;
+      small.textContent = '';
+      input.classList.remove('error');
+      const val = input.value.trim();
+
+      if (!val) {
+        small.textContent = 'Required';
+        input.classList.add('error');
+        valid = false;
+        return;
+      }
+
+      if (input.type === 'email' && val) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!re.test(val)) {
+          small.textContent = 'Invalid email';
+          input.classList.add('error');
+          valid = false;
+        }
+      }
+
+      if (input.id === 'age' && val) {
+        if (Number(val) < 18) {
+          small.textContent = 'Must be 18 or older';
+          input.classList.add('error');
+          valid = false;
+        }
+      }
+
+      if (input.id === 'cpass' && val) {
+        if (val !== form.querySelector('#pass').value) {
+          small.textContent = 'Passwords do not match';
+          input.classList.add('error');
+          valid = false;
+        }
+      }
+    });
+    return valid;
+  }
+
+  function gatherData() {
+    const data = {};
+    stages.forEach(stage => {
+      stage.querySelectorAll('input, select').forEach(input => {
+        data[input.id] = input.value.trim();
+      });
+    });
+    return data;
+  }
+
+  function displaySummary(data) {
+    summaryList.innerHTML = '';
+    for (const key in data) {
+      if(data.hasOwnProperty(key)) {
+        let label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        summaryList.innerHTML += `<li><strong>${label}:</strong> ${data[key] || '-'}</li>`;
+      }
+    }
+    summaryDiv.style.display = 'block';
+  }
+
+  nextBtn.onclick = () => {
+    if (!validateStage(current)) return;
+
+    if (current === stages.length - 1) {
+      const data = gatherData();
+      form.style.display = 'none';
+      displaySummary(data);
+      return;
+    }
+    current++;
+    showStage(current);
+  };
+
+  prevBtn.onclick = () => {
+    if (current === 0) return;
+    current--;
+    showStage(current);
+  };
+
+  showStage(current);
+</script>
+
+</body>
+</html>

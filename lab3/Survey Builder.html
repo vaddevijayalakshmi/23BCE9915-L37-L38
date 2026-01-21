@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Survey Builder</title>
+
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 40px 0;
+  }
+
+  .survey-card {
+    width: 700px;
+    margin: auto;
+    background: #ffffff;
+    padding: 35px 40px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #333;
+  }
+
+  .question {
+    margin-bottom: 25px;
+  }
+
+  .question-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #444;
+  }
+
+  .required {
+    color: red;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    outline: none;
+  }
+
+  input[type="text"]:focus {
+    border-color: #4a6cf7;
+  }
+
+  .option {
+    margin-left: 18px;
+    margin-top: 6px;
+    font-size: 15px;
+    color: #333;
+  }
+
+  small {
+    color: red;
+    display: block;
+    margin-top: 6px;
+  }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    background: #4a6cf7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 30px;
+  }
+
+  button:hover {
+    background: #3652d9;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="survey-card">
+  <h2>User Feedback Survey</h2>
+  <form id="surveyForm"></form>
+  <button onclick="submitSurvey()">Submit Survey</button>
+</div>
+
+<script>
+const questions = [
+  { id: 1, text: "Your Name", type: "text", required: true, max: 20 },
+  { id: 2, text: "Gender", type: "radio", required: true, options: ["Male", "Female"] },
+  { id: 3, text: "Skills Known", type: "checkbox", min: 1, options: ["HTML", "CSS", "JavaScript"] }
+];
+
+const form = document.getElementById("surveyForm");
+
+questions.forEach(q => {
+  const div = document.createElement("div");
+  div.className = "question";
+  div.innerHTML = buildQuestion(q);
+  form.appendChild(div);
+});
+
+function buildQuestion(q) {
+  let html = `
+    <div class="question-title">
+      ${q.text} ${q.required ? '<span class="required">*</span>' : ''}
+    </div>`;
+
+  if (q.type === "text") {
+    html += `<input type="text" id="q${q.id}" oninput="validate(${q.id})">`;
+  }
+
+  if (q.type === "radio") {
+    q.options.forEach(opt => {
+      html += `
+        <div class="option">
+          <input type="radio" name="q${q.id}" value="${opt}" onchange="validate(${q.id})"> ${opt}
+        </div>`;
+    });
+  }
+
+  if (q.type === "checkbox") {
+    q.options.forEach(opt => {
+      html += `
+        <div class="option">
+          <input type="checkbox" name="q${q.id}" value="${opt}" onchange="validate(${q.id})"> ${opt}
+        </div>`;
+    });
+  }
+
+  html += `<small id="err${q.id}"></small>`;
+  return html;
+}
+
+function validate(id) {
+  const q = questions.find(x => x.id === id);
+  const err = document.getElementById("err" + id);
+  err.innerText = "";
+
+  if (q.type === "text") {
+    const val = document.getElementById("q" + id).value.trim();
+    if (q.required && val === "") err.innerText = "This field is required";
+    else if (q.max && val.length > q.max) err.innerText = "Max " + q.max + " characters allowed";
+  }
+
+  if (q.type === "radio") {
+    if (q.required && !document.querySelector(`input[name="q${id}"]:checked`)) {
+      err.innerText = "Please select an option";
+    }
+  }
+
+  if (q.type === "checkbox") {
+    const checked = document.querySelectorAll(`input[name="q${id}"]:checked`);
+    if (checked.length < q.min) err.innerText = "Select at least " + q.min;
+  }
+
+  return err.innerText === "";
+}
+
+function submitSurvey() {
+  let valid = true;
+  questions.forEach(q => {
+    if (!validate(q.id)) valid = false;
+  });
+
+  if (valid) alert("Survey submitted successfully!");
+}
+</script>
+
+</body>
+</html>

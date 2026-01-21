@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Activity Monitor</title>
+<style>
+  body { font-family: 'Courier New', monospace; background: #121212; color: #00ff00; padding: 20px; }
+  .dashboard { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+  .controls { background: #1e1e1e; padding: 20px; border-radius: 8px; border: 1px solid #333; height: fit-content; }
+  .log-container { background: #000; padding: 15px; border-radius: 8px; border: 1px solid #00ff00; height: 400px; overflow-y: auto; }
+  .log-entry { font-size: 0.85rem; margin-bottom: 5px; border-bottom: 1px dotted #222; padding-bottom: 2px; }
+  .warning { color: #ff0000; font-weight: bold; animation: blink 1s infinite; }
+  input, select { 
+    background: #222; 
+    color: #0f0; 
+    border: 1px solid #444; 
+    padding: 8px; 
+    width: 100%; 
+    box-sizing: border-box; 
+    margin-bottom: 12px; 
+    font-family: 'Courier New', monospace;
+  }
+  button {
+    width: 100%; 
+    padding: 10px; 
+    margin-top: 10px; 
+    cursor: pointer; 
+    background: #333; 
+    color: #0f0; 
+    border: 1px solid #555;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+  }
+  button:hover { background: #444; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+  <div class="controls">
+    <h3>User Activity Monitor</h3>
+
+    <label for="clickThreshold">Click Threshold (last 5 sec)</label>
+    <input type="number" id="clickThreshold" value="10" min="1" />
+
+    <input type="text" id="trackInput" placeholder="Type here..." autocomplete="off" />
+
+    <div id="status">Status: Normal</div>
+
+    <button onclick="resetLog()">Reset Log</button>
+    <button onclick="exportLog()">Export Log</button>
+  </div>
+
+  <div class="log-container" id="logContainer">
+    <div class="log-entry">> System initialized. Monitoring started...</div>
+  </div>
+</div>
+
+<script>
+  let activities = [];
+  let clickThreshold = 10;
+  const timeWindow = 5000; // 5 seconds
+
+  const logContainer = document.getElementById('logContainer');
+  const statusEl = document.getElementById('status');
+  const clickThresholdInput = document.getElementById('clickThreshold');
+
+  clickThresholdInput.addEventListener('change', () => {
+    const val = parseInt(clickThresholdInput.value);
+    clickThreshold = val > 0 ? val : 10;
+    checkSecurity();
+  });
+
+  function logActivity(type, target, detail = '') {
+    const timestamp = new Date();
+    const entry = {
+      timestamp,
+      type,
+      target,
+      detail
+    };
+    activities.push(entry);
+    updateUI(entry);
+    checkSecurity();
+  }
+
+  function updateUI(entry) {
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.textContent = `[${entry.timestamp.toLocaleTimeString()}] ${entry.type.toUpperCase()} on <${entry.target}> ${entry.detail}`;
+    logContainer.prepend(div);
+
+    // Keep scroll top so latest is visible
+    if (logContainer.scrollTop !== 0) {
+      logContainer.scrollTop = 0;
+    }
+  }
+
+  function checkSecurity() {
+    const now = Date.now();
+    const recentClicks = activities.filter(a => 
+      a.type === 'click' && (now - a.timestamp.getTime()) <= timeWindow
+    );
+    if (recentClicks.length > clickThreshold) {
+      statusEl.innerHTML = 'Status: <span class="warning">SUSPICIOUS ACTIVITY DETECTED</span>';
+    } else {
+      statusEl.textContent = 'Status: Normal';
+    }
+  }
+
+  document.addEventListener('click', e => {
+    logActivity('click', e.target.tagName, `Coords: ${e.clientX},${e.clientY}`);
+  }, false);
+
+  document.addEventListener('keydown', e => {
+    logActivity('keypress', e.target.tagName, `Key: ${e.key}`);
+  }, false);
+
+  document.addEventListener('focus', e => {
+    logActivity('focus', e.target.tagName, 'Element focused');
+  }, true);
+
+  function resetLog() {
+    activities = [];
+    statusEl.textContent = 'Status: Normal';
+    logContainer.innerHTML = '<div class="log-entry">> Log cleared.</div>';
+  }
+
+  function exportLog() {
+    if (activities.length === 0) {
+      alert('No activity to export.');
+      return;
+    }
+    const text = activities
+      .map(a => `[${a.timestamp.toLocaleTimeString()}] ${a.type} | ${a.target} | ${a.detail}`)
+      .join('\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.download = 'activity_log.txt';
+    anchor.click();
+    URL.revokeObjectURL(anchor.href);
+  }
+</script>
+
+</body>
+</html>

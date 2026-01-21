@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Shopping Cart</title>
+
+<style>
+  body { font-family: Arial; background: #f2f2f2; }
+  .cart { width: 520px; margin: 40px auto; background: white; padding: 20px; }
+  select, input, button { padding: 10px; margin: 6px 0; width: 100%; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px; border-bottom: 1px solid #ccc; text-align: center; }
+</style>
+</head>
+
+<body>
+
+<div class="cart">
+  <h2>Shopping Cart</h2>
+
+  <select id="product">
+    <option value="">Select Product</option>
+    <option value="Laptop|electronics|500">Laptop</option>
+    <option value="Book|education|50">Book</option>
+    <option value="Shirt|clothing|30">Shirt</option>
+  </select>
+
+  <input type="number" id="qty" placeholder="Quantity" min="1">
+  <button onclick="addItem()">Add Item</button>
+
+  <input type="text" id="coupon" placeholder="Coupon (SAVE10 / SAVE20)">
+  <button onclick="applyCoupon()">Apply Coupon</button>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Qty</th>
+        <th>Price</th>
+        <th>Remove</th>
+      </tr>
+    </thead>
+    <tbody id="cartBody"></tbody>
+  </table>
+
+  <div id="total">Total: $0</div>
+</div>
+
+<script>
+let cart = [];
+let couponDiscount = 0;
+
+function addItem() {
+  const value = product.value;
+  const q = Number(qty.value);
+  if (!value || q <= 0) return;
+
+  const [name, category, price] = value.split("|");
+  const item = cart.find(p => p.name === name);
+
+  if (item) item.qty += q;
+  else cart.push({ name, category, price: Number(price), qty: q });
+
+  updateCart();
+}
+
+function removeItem(i) {
+  cart.splice(i, 1);
+  updateCart();
+}
+
+function applyCoupon() {
+  const code = coupon.value.trim().toUpperCase();
+  couponDiscount = code === "SAVE20" ? 20 : code === "SAVE10" ? 10 : 0;
+  updateCart();
+}
+
+function updateCart() {
+  cartBody.innerHTML = "";
+  let sum = 0;
+
+  cart.forEach((item, i) => {
+    let cost = item.price * item.qty;
+
+    if (item.qty >= 5) cost *= 0.9;
+    if (item.category === "education") cost *= 0.95;
+
+    sum += cost;
+
+    cartBody.innerHTML += `
+      <tr>
+        <td>${item.name}</td>
+        <td>${item.qty}</td>
+        <td>$${cost.toFixed(2)}</td>
+        <td><button onclick="removeItem(${i})">X</button></td>
+      </tr>`;
+  });
+
+  if (new Date().getHours() >= 18) sum *= 0.95;
+
+  sum -= couponDiscount;
+  if (sum < 0) sum = 0;
+
+  document.getElementById("total").innerText =
+    "Total: $" + sum.toFixed(2);
+}
+</script>
+
+</body>
+</html>
